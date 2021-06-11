@@ -1,20 +1,26 @@
 AS = nasm
-LD = ld86
+LD = ld
 # ARCH = x86_64
 
-src_file = ./game.asm
-out_obj = game.o
-out_bin = game.out
+game_src = game.asm
+out_dir = bin
+game_obj = $(out_dir)/game.o
+game_bin = $(out_dir)/game
 
-.PHONY: default, bin, game
+.PHONY: default, bin, clean
 
 default: bin
 
-$(out_obj): $(out_obj)
-	$(AS) -f -$(ARCH) -o $@ $<
+$(game_obj): $(game_src)
+	mkdir -p $(out_dir)
+	$(AS) -f elf64 -o $@ $<
 
-$(out_bin): $(src_file)
+$(game_bin): $(game_obj)
 	$(LD) -o $@ $<
 
-game: bin
-bin: $(out_bin)
+bin: $(game_bin)
+run: $(game_bin)
+	./$(game_bin)
+
+clean:
+	rm -rf $(out_dir)/*
