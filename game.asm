@@ -14,18 +14,28 @@ playerTurn1: db "It's the "
 playerTurn1Len: equ $-playerTurn1
 playerTurn2: db "'s turn.", 10
 playerTurn2Len: equ $-playerTurn2
+
 askPlayerAction: db "What do you want to do?", 10,\
-				"[1]: weak attack (1 stamina)", 10,\
-				"[2]: strong attack (3 stamina)", 10,\
-				"[3]: heal (2 stamina)", 10,\
+				"[1]: Weak attack (1 stamina)", 10,\
+				"[2]: Strong attack (3 stamina)", 10,\
+				"[3]: Heal (2 stamina)", 10,\
 				"[4]: Stats", 10,\
 				"[5]: Help", 10,\
 				"[6]: Quit game", 10,\
 				"(1/2/3/4/5/6)> "
 askPlayerActionLen: equ $-askPlayerAction
 
+helpMsg: db "Instruction:", 10,\
+			"Weak attack: deals 2 damage and uses 1 stamina", 10,\
+			"Strong attack: deals 5 damage and uses 3 stamina", 10,\
+			"Heal: restores 2 HP and uses 2 stamina", 10
+helpMsgLen: equ $-helpMsg
+
 badInputMsg: db "Your input is invalid, please input between 1 to 6 (inclusive.)", 10
 badInputMsgLen: equ $-badInputMsg
+
+newRoundMsg: db "Round: "
+newRoundMsgLen: equ $-newRoundMsg
 
 dbgMsg1: db "Halo", 10
 dbgMsg1Len: equ $-dbgMsg1
@@ -40,6 +50,9 @@ section .text
 global _start
 
 _start:
+	jmp game
+
+game:
 	; Tabel variabel
 	; Nama          | register
 	; --------------|----------
@@ -48,9 +61,8 @@ _start:
 	; p2Stamina     | r10
 	; p2Hp          | r11
 	; roundCounter  | r12
-	; isP1Winner    | r13
-	; p1Input       | r14, int
-	; p12nput       | r15, int
+	; isP1Turn      | r13
+	; pInput        | r14
 
 	.gameInit:
 		mov r8, 100
@@ -59,11 +71,23 @@ _start:
 		mov r11, 100
 		xor r12, r12
 		xor r13, r13
+		xor r14, r14
 
 	.startTurn:
 		inc r12
-		mov rax, r12
-		and rax, 0xFF
+
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, newRoundMsg
+		mov rdx, newRoundMsgLen
+		syscall
+
+		mov rdi, r12
+		call printNum
+		call printNewLine
+
+		mov r13, r12
+		and r13, 0xFF
 
 		.playerTurn1:
 			mov rax, 1
@@ -72,9 +96,9 @@ _start:
 			mov rdx, playerTurn1Len
 			syscall
 
-			test rax, rax
-			jnz .writeP1Name ; genap
-			jmp .writeP2Name ; ganjil
+			test r13, r13
+			jnz .writeP1Name ; ganjil
+			jmp .writeP2Name ; genap
 
 		.playerTurn2:
 			mov rax, 1
@@ -89,14 +113,28 @@ _start:
 			mov rsi, askPlayerAction
 			mov rdx, askPlayerActionLen
 			syscall
+
 			call getNumInput
-			cmp rax, 1
+			mov r14, rax
+
+			cmp r14, 1
 			jl .badInput
-			cmp rax, 6
+			cmp r14, 6
 			jg .badInput
 
-			xor rdi, rdi
-			call exit
+			; too lazy for switch-case statement
+			cmp r14, 1
+			je .weak
+			cmp r14, 2
+			je .heal
+			cmp r14, 3
+			je .strong
+			cmp r14, 4
+			je .stats
+			cmp r14, 5
+			je .help
+			cmp r14, 6
+			je .exit
 
 	.endTurn:
 		mov rdi, 1
@@ -108,8 +146,49 @@ _start:
 		call printNum
 		call printNewLine
 
-	xor rdi, rdi
-	call exit
+	.exit:
+		xor rdi, rdi
+		call exit
+
+	.help:
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, helpMsg
+		mov rdx, helpMsgLen
+		syscall
+		jmp .playerInput
+
+	.stats:
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, helpMsg
+		mov rdx, helpMsgLen
+		syscall
+		jmp .playerInput
+
+	.strong:
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, helpMsg
+		mov rdx, helpMsgLen
+		syscall
+		jmp .playerInput
+
+	.heal:
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, helpMsg
+		mov rdx, helpMsgLen
+		syscall
+		jmp .playerInput
+
+	.weak:
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, helpMsg
+		mov rdx, helpMsgLen
+		syscall
+		jmp .playerInput
 
 	.writeP1Name:
 		mov rax, 1
@@ -236,8 +315,8 @@ getNumInput:
 	; + \0
 	; so at most, we read 21 bytes
 
-	mov rax, 0 ; syscall number, 0 is read
-	mov rdi, 0 ; read from stdin
+	xor rax, rax ; syscall number, 0 is read
+	xor rdi, rdi ; read from stdin
 	lea rsi, [rbp-29] ; buf, dari [rbp-29] sampai [rbp-8]
 	mov rdx, 21 ; size
 	syscall
@@ -249,11 +328,12 @@ getNumInput:
 
 	xor rax, rax ; sum = 0
 	xor rdx, rdx ; i = 0, banyak digit yang sudah "dibaca"
+	xor rbx, rbx ; tmp = 0
 	.loop:
 		imul rax, 10 ; sum *= 10
-		mov byte bl, [rsi + rdx]
-		sub rbx, 48
-		add rax, rbx ; sum += (*(rsi + i) - '0')
+		mov byte bl, [rsi + rdx] ; tmp = *(rsi + i)
+		sub rbx, 48 ; tmp -= '0'
+		add rax, rbx ; sum += tmp
 
 		inc rdx
 
