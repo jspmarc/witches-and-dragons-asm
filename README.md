@@ -34,3 +34,12 @@ mov rsi, hello		; buf, ecx
 mov rdx, helloLen	; count, edx
 syscall
 ```
+### Notes on x86-64 syscall:
+`RAX`: syscall number
+`RDI`: first arg
+`RSI`: second arg
+`RDX`: third arg
+`R10`: fourth arg
+`R9`: fifth arg
+`R8`: sixth arg
+`RCX`: return address

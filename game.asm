@@ -41,7 +41,7 @@ printNum:
 
 	mov rax, rdi
 	xor rcx, rcx ; initial condition, "first element", i = 0
-	mov [rbp-8], rcx ; *(rbp - 8) = 0, null terminator for string
+	mov [rbp-8], rcx ; *(rbp - 8) = 0, null terminator for string, batas string
 	inc rcx ; i++
 
 	test rdi, rdi
@@ -92,20 +92,61 @@ printNum:
 		pop rbp
 		ret
 
+; void printNewLine();
+; Fungsi untuk menuliskan sebuah new line ("\n")
 printNewLine:
 	push rbp
 	mov rbp, rsp
 
 	xor rax, rax
-	mov byte [rbp-2], al
+	mov byte [rbp-8], al
 	add rax, 10
-	mov byte [rbp-1], al
+	mov byte [rbp-9], al
 
 	mov rax, 1
 	mov rdi, 1
-	lea rsi, [rbp-2]
+	lea rsi, [rbp-9]
 	mov rdx, 2
 	syscall
+
+	mov rsp, rbp
+	pop rbp
+	ret
+
+; long getNumInput();
+; Fungsi untuk membaca sebuah angka (maksimal 8 byte) dari user
+getNumInput:
+	push rbp
+	mov rbp, rsp
+
+	; max num has 19 digits, it's already a lot so no need for "offset"
+	; + \n
+	; + \0
+	; so at most, we read 21 bytes
+
+	mov rax, 0 ; syscall number, 0 is read
+	mov rdi, 0 ; read from stdin
+	lea rsi, [rbp-29] ; buf, dari [rbp-29] sampai [rbp-8]
+	mov rdx, 21 ; size
+	syscall
+
+	; hapus "\n" dari input
+	dec rax ; itung digitnya aja, "\n" ga dianggap
+	mov rcx, rax ; banyak digit di register rcx
+	mov qword [rsi+rcx], 0
+
+	xor rax, rax ; sum = 0
+	xor rdx, rdx ; i = 0, banyak digit yang sudah "dibaca"
+	.loop:
+		imul rax, 10 ; sum *= 10
+		mov byte bl, [rsi + rdx]
+		sub rbx, 48
+		add rax, rbx ; sum += (*(rsi + i) - '0')
+
+		inc rdx
+
+		cmp rdx, rcx ; kondisi, banyak yang "dibaca" == banyak digit
+		jne .loop ; if (i != rcx) goto loop;
 
 	mov rsp, rbp
 	pop rbp
