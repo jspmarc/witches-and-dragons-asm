@@ -5,7 +5,9 @@ AS_FLAG = -gstabs\
 else
 AS_FLAG = -Ox
 endif
+
 LD = ld
+DEBUGGER = gdb
 
 game_src = game.asm
 out_dir = bin
@@ -26,6 +28,9 @@ $(game_bin): $(game_obj)
 bin: $(game_bin)
 run: $(game_bin)
 	./$<
+
+dbg: $(game_bin)
+	$(DEBUGGER) $<
 
 clean:
 	rm -rf $(out_dir)/*

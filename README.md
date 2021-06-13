@@ -19,3 +19,18 @@ Setiap karakter memiliki 100 stamina dan 100 HP di awal
 - Pemain dengan HP terendah kalah
 - Permainan berakhir ketika kedua karakter sudah tidak ada stamina
 - Permainan berakhir ketika salah seorang karakter kehabisan HP
+
+## ASM notes
+Program "hello world"
+```as
+section .data
+hello: db "Hello, world!", 0xA
+helloLen equ $-hello
+
+section .text
+mov rax, 1			; write syscall, eax
+mov rdi, 1			; fd, stdout, ebx
+mov rsi, hello		; buf, ecx
+mov rdx, helloLen	; count, edx
+syscall
+```
