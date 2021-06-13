@@ -43,3 +43,6 @@ syscall
 - `R9`: fifth arg
 - `R8`: sixth arg
 - `RCX`: return address
+
+### Register Notes
+https://stackoverflow.com/questions/18024672/what-registers-are-preserved-through-a-linux-x86-64-function-call

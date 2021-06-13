@@ -3,7 +3,11 @@
 
 ; ---- DATA SECTION ----
 section .data
+batas: db "========================================"
+batasLen: equ $-batas
+
 gameTitle: db "[---- Witches 'n Dragons ----]"
+gameTitleLen: equ $-gameTitle
 
 p1Name: db "Witch"
 p1NameLen: equ $-p1Name
@@ -37,6 +41,17 @@ badInputMsgLen: equ $-badInputMsg
 newRoundMsg: db "Round: "
 newRoundMsgLen: equ $-newRoundMsg
 
+witchStatsMsg1: db "The Witch's stats:", 10, "HP: "
+witchStatsMsg1Len: equ $-witchStatsMsg1
+witchStatsMsg2: db "Stamina:"
+witchStatsMsg2Len: equ $-witchStatsMsg2
+
+dragonStatsMsg1: db "The Dragon's stats:", 10\
+			"HP:"
+dragonStatsMsg1Len: equ $-dragonStatsMsg1
+dragonStatsMsg2: db "Stamina:"
+dragonStatsMsg2Len: equ $-dragonStatsMsg2
+
 dbgMsg1: db "Halo", 10
 dbgMsg1Len: equ $-dbgMsg1
 dbgMsg2: db "Aku di sini", 10
@@ -60,7 +75,7 @@ global _start
 	mov rdi, 1
 
 	test %2, %2
-	jz .p2 ; genap
+	je .p2 ; genap
 
 	mov rsi, p1Name
 	mov rdx, p1NameLen
@@ -129,6 +144,13 @@ game:
 
 		mov rax, 1
 		mov rdi, 1
+		mov rsi, batas
+		mov rdx, batasLen
+		syscall
+		call printNewLine
+
+		mov rax, 1
+		mov rdi, 1
 		mov rsi, newRoundMsg
 		mov rdx, newRoundMsgLen
 		syscall
@@ -137,10 +159,15 @@ game:
 		call printNum
 		call printNewLine
 
-		mov r8b, bl
-		and r8, 0x1
+		mov r8, 3
+		div r8
+
+		test rdx, rdx
+		jz .restoreStamina
 
 		.playerTurn1:
+			mov r8b, bl
+			and r8, 0x1
 			mov rax, 1
 			mov rdi, 1
 			mov rsi, playerTurn1
@@ -166,9 +193,6 @@ game:
 
 			call getNumInput
 			mov r9, rax
-			mov rdi, rax
-			call printNum
-			call printNewLine
 
 			cmp r9, 1
 			jl .badInput
@@ -191,9 +215,6 @@ game:
 
 	.endTurn:
 		jmp .startTurn
-		; mov rdi, 1
-		; call printNum
-		; call printNewLine
 
 	.gameEnd:
 		mov rdi, 1
@@ -213,11 +234,46 @@ game:
 		jmp .playerInput
 
 	.stats:
+		; Witch's hp
 		mov rax, 1
 		mov rdi, 1
-		mov rsi, helpMsg
-		mov rdx, helpMsgLen
+		mov rsi, witchStatsMsg1
+		mov rdx, witchStatsMsg1Len
 		syscall
+		mov rdi, r12
+		call printNum
+		call printNewLine
+
+		; Witch's stamina
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, witchStatsMsg2
+		mov rdx, witchStatsMsg2Len
+		syscall
+		mov rdi, r13
+		call printNum
+		call printNewLine
+
+		; Dragon's hp
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, dragonStatsMsg1
+		mov rdx, dragonStatsMsg1Len
+		syscall
+		mov rdi, r14
+		call printNum
+		call printNewLine
+
+		; Dragon's stamina
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, dragonStatsMsg2
+		mov rdx, dragonStatsMsg2Len
+		syscall
+		mov rdi, r15
+		call printNum
+		call printNewLine
+
 		jmp .playerInput
 
 	.strong:
@@ -251,6 +307,10 @@ game:
 		mov rdx, badInputMsgLen
 		syscall
 		jmp .playerInput
+
+	.restoreStamina:
+		add r12, 2
+		add r14, 2
 
 
 ; *** Utility functions ***
