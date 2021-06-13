@@ -49,6 +49,57 @@ section .text
 
 global _start
 
+; writeP1Name
+; Menuliskan nama pemain 1 tanpa new line,
+; lalu lompat ke suatu tempat (argumen pertama macro)
+%macro writePlayerName 2
+	push rbp
+	mov rbp, rsp
+
+	mov rax, 1
+	mov rdi, 1
+
+	test %2, %2
+	jz .p2 ; genap
+
+	mov rsi, p1Name
+	mov rdx, p1NameLen
+	syscall
+
+	jmp .done
+
+	.p2:
+		mov rsi, p2Name
+		mov rdx, p2NameLen
+		syscall
+
+	.done
+		mov rsp, rbp
+		pop rbp
+
+		jmp %1
+%endmacro
+
+; writeP2Name
+; Menuliskan nama pemain 2 tanpa new line,
+; lalu lompat ke suatu tempat (argumen pertama macro)
+%macro writeP2Name 1
+	push rbp
+	mov rbp, rsp
+
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, p2Name
+	mov rdx, p2NameLen
+	syscall
+	call printNewLine
+
+	mov rsp, rbp
+	pop rbp
+
+	jmp %1
+%endmacro
+
 _start:
 	jmp game
 
@@ -56,25 +107,25 @@ game:
 	; Tabel variabel
 	; Nama          | register
 	; --------------|----------
-	; p1Stammina    | r8
-	; p1Hp          | r9
-	; p2Stamina     | r10
-	; p2Hp          | r11
-	; roundCounter  | r12
-	; isP1Turn      | r13
-	; pInput        | r14
+	; p1Stammina    | r12
+	; p1Hp          | r13
+	; p2Stamina     | r14
+	; p2Hp          | r15
+	; roundCounter  | rbx
+	; isP1Turn      | r8
+	; pInput        | r9
 
 	.gameInit:
-		mov r8, 100
-		mov r9, 100
-		mov r10, 100
-		mov r11, 100
-		xor r12, r12
-		xor r13, r13
-		xor r14, r14
+		mov r12, 100 ; p1Stamina
+		mov r13, 100 ; p1Hp
+		mov r14, 100 ; p2Stamina
+		mov r15, 100 ; p2Hp
+		xor rbx, rbx ; roundCounter
+		xor r8, r8   ; isP1Turn
+		xor r9, r9   ; pInput
 
 	.startTurn:
-		inc r12
+		inc rbx
 
 		mov rax, 1
 		mov rdi, 1
@@ -82,12 +133,12 @@ game:
 		mov rdx, newRoundMsgLen
 		syscall
 
-		mov rdi, r12
+		mov rdi, rbx
 		call printNum
 		call printNewLine
 
-		mov r13, r12
-		and r13, 0xFF
+		mov r8b, bl
+		and r8, 0x1
 
 		.playerTurn1:
 			mov rax, 1
@@ -96,9 +147,8 @@ game:
 			mov rdx, playerTurn1Len
 			syscall
 
-			test r13, r13
-			jnz .writeP1Name ; ganjil
-			jmp .writeP2Name ; genap
+			lea r10, [.playerTurn2]
+			writePlayerName r10, r8
 
 		.playerTurn2:
 			mov rax, 1
@@ -115,31 +165,35 @@ game:
 			syscall
 
 			call getNumInput
-			mov r14, rax
+			mov r9, rax
+			mov rdi, rax
+			call printNum
+			call printNewLine
 
-			cmp r14, 1
+			cmp r9, 1
 			jl .badInput
-			cmp r14, 6
+			cmp r9, 6
 			jg .badInput
 
 			; too lazy for switch-case statement
-			cmp r14, 1
+			cmp r9, 1
 			je .weak
-			cmp r14, 2
+			cmp r9, 2
 			je .heal
-			cmp r14, 3
+			cmp r9, 3
 			je .strong
-			cmp r14, 4
+			cmp r9, 4
 			je .stats
-			cmp r14, 5
+			cmp r9, 5
 			je .help
-			cmp r14, 6
+			cmp r9, 6
 			je .exit
 
 	.endTurn:
-		mov rdi, 1
-		call printNum
-		call printNewLine
+		jmp .startTurn
+		; mov rdi, 1
+		; call printNum
+		; call printNewLine
 
 	.gameEnd:
 		mov rdi, 1
@@ -172,7 +226,7 @@ game:
 		mov rsi, helpMsg
 		mov rdx, helpMsgLen
 		syscall
-		jmp .playerInput
+		jmp .endTurn
 
 	.heal:
 		mov rax, 1
@@ -180,7 +234,7 @@ game:
 		mov rsi, helpMsg
 		mov rdx, helpMsgLen
 		syscall
-		jmp .playerInput
+		jmp .endTurn
 
 	.weak:
 		mov rax, 1
@@ -188,25 +242,7 @@ game:
 		mov rsi, helpMsg
 		mov rdx, helpMsgLen
 		syscall
-		jmp .playerInput
-
-	.writeP1Name:
-		mov rax, 1
-		mov rdi, 1
-		mov rsi, p1Name
-		mov rdx, p1NameLen
-		syscall
-		jmp .playerTurn2
-
-	; void writeP2Name();
-	; Menuliskan nama pemain 2 tanpa new line
-	.writeP2Name:
-		mov rax, 1
-		mov rdi, 1
-		mov rsi, p2Name
-		mov rdx, p2NameLen
-		syscall
-		jmp .playerTurn2
+		jmp .endTurn
 
 	.badInput:
 		mov rax, 1
@@ -241,15 +277,15 @@ printNum:
 
 	.loop:
 		xor rdx, rdx
-		mov rbx, 10
-		div rbx
+		mov r8, 10
+		div r8
 
 		and rdx, 0xFF
 		add dl, 48 ; ubah ke ASCII-nya, dl += '0'
 
-		lea rbx, [rbp-8]
-		sub rbx, rcx
-		mov byte [rbx], dl
+		lea r8, [rbp-8]
+		sub r8, rcx
+		mov byte [r8], dl
 
 		inc rcx ; i++
 		test rax, rax
@@ -261,21 +297,21 @@ printNum:
 		; tambah '-' ke awal string
 		xor rdx, rdx
 		mov dl, 45 ; ascii '-'
-		lea rbx, [rbp-8]
-		sub rbx, rcx
-		mov byte [rbx], dl
+		lea r8, [rbp-8]
+		sub r8, rcx
+		mov byte [r8], dl
 		jmp .done
 
 	.isPositive:
 		dec rcx
 
 	.done:
-		lea rbx, [rbp-8]
-		sub rbx, rcx
+		lea r8, [rbp-8]
+		sub r8, rcx
 
 		mov rax, 1
 		mov rdi, 1
-		mov rsi, rbx
+		mov rsi, r8
 		mov rdx, rcx
 		syscall
 
@@ -328,12 +364,12 @@ getNumInput:
 
 	xor rax, rax ; sum = 0
 	xor rdx, rdx ; i = 0, banyak digit yang sudah "dibaca"
-	xor rbx, rbx ; tmp = 0
+	xor r10, r10 ; tmp = 0
 	.loop:
 		imul rax, 10 ; sum *= 10
-		mov byte bl, [rsi + rdx] ; tmp = *(rsi + i)
-		sub rbx, 48 ; tmp -= '0'
-		add rax, rbx ; sum += tmp
+		mov byte r10b, [rsi + rdx] ; tmp = *(rsi + i)
+		sub r10, 48 ; tmp -= '0'
+		add rax, r10 ; sum += tmp
 
 		inc rdx
 
