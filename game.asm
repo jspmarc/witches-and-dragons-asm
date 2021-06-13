@@ -20,10 +20,7 @@ section .text
 global _start
 
 _start:
-	mov edi, -9
-	call printNum
-	call printNewLine
-	mov edi, 1
+	mov rdi, -123499999
 	call printNum
 	call printNewLine
 
@@ -36,74 +33,61 @@ exit:
 	xor rdi, rdi
 	syscall
 
-; void printInt(long i);
+; void printNum(long num);
 ; Fungsi untuk menuliskan long integer (8 byte) ke layar
 printNum:
 	push rbp
 	mov rbp, rsp
 
-	; negative integer
-	test edi, edi ; integer is 4 bytes
-	jge .main ; if (edi >= 0) goto main
-	mov rbx, rdi ; save the integer
-	xor rax, rax
-	mov byte [rbp-2], al ; char s[2]; s[1] = 0
-	mov al, 45
-	mov byte [rbp-1], al; s[0] = 45
+	mov rax, rdi
+	xor rcx, rcx ; initial condition, "first element", i = 0
+	mov [rbp-8], rcx ; *(rbp - 8) = 0, null terminator for string
+	inc rcx ; i++
 
-	; print '-'
-	mov rax, 1
-	mov rdi, 1
-	lea rsi, [rbp-2]
-	mov rdx, 2
-	syscall
+	test rdi, rdi
+	jge .loop ; kalo negatif, bikin jadi positif
+	imul rax, -1
 
-	; kaliin argumen dengan -1
-	imul rbx, -1
-	mov rdi, rbx
+	.loop:
+		xor rdx, rdx
+		mov rbx, 10
+		div rbx
 
-	.main:
-		xor ecx, ecx
-		and rdi, 0x00000000000000FF
-		call printDigit
+		and rdx, 0xFF
+		add dl, 48 ; ubah ke ASCII-nya, dl += '0'
 
-	mov rsp, rbp
-	pop rbp
-	ret
+		lea rbx, [rbp-8]
+		sub rbx, rcx
+		mov byte [rbx], dl
 
-; void printDigit(unsigned char dig);
-; Fungsi untuk menuliskan sebuah digit (unsigned) ke layar
-printDigit:
-	push rbp
-	mov rbp, rsp
+		inc rcx ; i++
+		test rax, rax
+		jnz .loop ; if (num != 0) goto loop
 
-	; check digit < 0 atau digit > 9
-	; kalo iya, fungsi berhenti
-	add dil, 48
-	cmp dil, 48 ; < '0'
-	jb .fail
-	cmp dil, 57 ; > '9'
-	ja .fail
-	jmp .succ
-
-	.fail:
-		mov rax, -1
+	test rdi, rdi
+	jge .isPositive
+	.isNegative:
+		; tambah '-' ke awal string
+		xor rdx, rdx
+		mov dl, 45 ; ascii '-'
+		lea rbx, [rbp-8]
+		sub rbx, rcx
+		mov byte [rbx], dl
 		jmp .done
 
-	.succ:
-		xor rax, rax
-		mov byte [rbp-2], al
-		mov byte [rbp-1], dil
+	.isPositive:
+		dec rcx
+
+	.done:
+		lea rbx, [rbp-8]
+		sub rbx, rcx
 
 		mov rax, 1
 		mov rdi, 1
-		lea rsi, [rbp-2]
-		mov rdx, 2
+		mov rsi, rbx
+		mov rdx, rcx
 		syscall
 
-		mov byte al, dil
-
-	.done:
 		mov rsp, rbp
 		pop rbp
 		ret
