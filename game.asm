@@ -69,13 +69,6 @@ healMsgLen: equ $-healMsg
 restoreStaminaMsg: db "Restored 2 stamina for each players.", 10
 restoreStaminaMsgLen: equ $-restoreStaminaMsg
 
-dbgMsg1: db "Halo", 10
-dbgMsg1Len: equ $-dbgMsg1
-dbgMsg2: db "Aku di sini", 10
-dbgMsg2Len: equ $-dbgMsg1
-dbgMsg3: db "Tangkap aku, kawan!", 10
-dbgMsg3Len: equ $-dbgMsg1
-
 ; ---- TEXT SECTION ----
 section .text
 
@@ -498,54 +491,6 @@ printBatas:
 	mov rdx, batasLen
 	syscall
 	call printNewLine
-
-	mov rsp, rbp
-	pop rbp
-	ret
-
-; void debug1()
-; nulisin pesan debug
-debug1:
-	push rbp
-	mov rbp, rsp
-
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, dbgMsg1
-	mov rdx, dbgMsg1Len
-	syscall
-
-	mov rsp, rbp
-	pop rbp
-	ret
-
-; void debug2()
-; nulisin pesan debug
-debug2:
-	push rbp
-	mov rbp, rsp
-
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, dbgMsg2
-	mov rdx, dbgMsg2Len
-	syscall
-
-	mov rsp, rbp
-	pop rbp
-	ret
-
-; void debug3()
-; nulisin pesan debug
-debug3:
-	push rbp
-	mov rbp, rsp
-
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, dbgMsg3
-	mov rdx, dbgMsg3Len
-	syscall
 
 	mov rsp, rbp
 	pop rbp
