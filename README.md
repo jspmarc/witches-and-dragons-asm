@@ -13,8 +13,9 @@ Seoranng pemain memiliki seorang karakter
 ### Kondisi awal:
 Setiap karakter memiliki 100 stamina dan 100 HP di awal
 ### Stamina:
-- Ketika stamina habis, karakter ga bisa ngapa-ngapain lagi dan turn di-skip
+- Ketika stamina habis, turn di-skip
 - 2 Stamina akan di-restore setiap 3 turn
+- Semua move dapat dilakukan asalkan stamina di atas 0
 ### Kondisi menang/kalah:
 - Pemain dengan HP terendah kalah
 - Permainan berakhir ketika kedua karakter sudah tidak ada stamina
