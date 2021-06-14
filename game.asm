@@ -6,10 +6,10 @@ section .data
 batas: db "========================================"
 batasLen: equ $-batas
 
-gameTitle: db "[---- Witches 'n Dragons ----]"
+gameTitle: db "[---------- Witches 'n Dragons ----------]"
 gameTitleLen: equ $-gameTitle
 
-gameOver: db "[---- The End ----]"
+gameOver: db "[---------- The End ----------]"
 gameOverLen: equ $-gameOver
 
 p1Name: db "Witch"
@@ -122,6 +122,14 @@ game:
 	; isP1Turn      | r8
 	; pInput        | r9
 
+	.printTitle:
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, gameTitle
+		mov rdx, gameTitleLen
+		syscall
+		call printNewLine
+
 	.gameInit:
 		mov r12, 100 ; p1Stamina
 		mov r13, 100 ; p1Hp
@@ -201,17 +209,19 @@ game:
 			cmp r9, 5
 			je .help
 			cmp r9, 6
-			je .exit
+			je .printGameOver
 
 	.endTurn:
 		jmp .startTurn
 
-	.gameEnd:
+	.printGameOver:
+		mov rax, 1
 		mov rdi, 1
-		call printNum
+		mov rsi, gameOver
+		mov rdx, gameOverLen
+		syscall
 		call printNewLine
 
-	.exit:
 		xor rdi, rdi
 		call exit
 
