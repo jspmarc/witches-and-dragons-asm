@@ -66,6 +66,10 @@ weakAtkMsgLen: equ $-weakAtkMsg
 healMsg: db "You restored 2 HP.", 10
 healMsgLen: equ $-healMsg
 
+outOfStaminaMsg: db "You are out of stamina and unable to do anything.", 10,\
+					"Skipping your turn...", 10
+outOfStaminaMsgLen: equ $-outOfStaminaMsg
+
 restoreStaminaMsg: db "Restored 2 stamina for each players.", 10
 restoreStaminaMsgLen: equ $-restoreStaminaMsg
 
@@ -179,6 +183,21 @@ game:
 			mov rdx, playerTurn2Len
 			syscall
 
+			mov r8b, bl
+			and r8, 1
+
+			test r8, r8
+			jnz .checkP1Stamina
+
+			; .checkP2Stamina
+			cmp r14, 0
+			jle .outOfStamina
+			jmp .playerInput
+
+			.checkP1Stamina:
+				cmp r12, 0
+				jle .outOfStamina
+
 		.playerInput:
 			mov rax, 1
 			mov rdi, 1
@@ -212,18 +231,12 @@ game:
 			je .printGameOver
 
 	.endTurn:
+		cmp r13, 0
+		jle .p2Win
+		cmp r15, 0
+		jle .p1Win
+
 		jmp .startTurn
-
-	.printGameOver:
-		mov rax, 1
-		mov rdi, 1
-		mov rsi, gameOver
-		mov rdx, gameOverLen
-		syscall
-		call printNewLine
-
-		xor rdi, rdi
-		call exit
 
 	.help:
 		call printBatas
@@ -362,6 +375,46 @@ game:
 		call printBatas
 
 		jmp .playerTurn1
+
+	.outOfStamina:
+		call printBatas
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, outOfStaminaMsg
+		mov rdx, outOfStaminaMsgLen
+		syscall
+		jmp .startTurn
+
+	.p1Win:
+		call printBatas
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, witchWinMsg
+		mov rdx, witchWinMsgLen
+		syscall
+		call printBatas
+		jmp .printGameOver
+
+	.p2Win:
+		call printBatas
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, dragonWinMsg
+		mov rdx, dragonWinMsgLen
+		syscall
+		call printBatas
+		jmp .printGameOver
+
+	.printGameOver:
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, gameOver
+		mov rdx, gameOverLen
+		syscall
+		call printNewLine
+
+		xor rdi, rdi
+		call exit
 
 ; *** Utility functions ***
 ; void exit(int code);
