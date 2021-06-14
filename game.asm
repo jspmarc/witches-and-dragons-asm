@@ -66,6 +66,9 @@ weakAtkMsgLen: equ $-weakAtkMsg
 healMsg: db "You restored 2 HP.", 10
 healMsgLen: equ $-healMsg
 
+restoreStaminaMsg: db "Restored 2 stamina for each players.", 10
+restoreStaminaMsgLen: equ $-restoreStaminaMsg
+
 dbgMsg1: db "Halo", 10
 dbgMsg1Len: equ $-dbgMsg1
 dbgMsg2: db "Aku di sini", 10
@@ -78,9 +81,11 @@ section .text
 
 global _start
 
-; writeP1Name
+; writePlayerName
 ; Menuliskan nama pemain 1 tanpa new line,
 ; lalu lompat ke suatu tempat (argumen pertama macro)
+; argumen kedua adalah nilai "boolean", jika ganjil artinya nama player 2 dan
+; dan genap maka player 1
 %macro writePlayerName 2
 	push rbp
 	mov rbp, rsp
@@ -89,7 +94,7 @@ global _start
 	mov rdi, 1
 
 	test %2, %2
-	je .p2 ; genap
+	jz .p2 ; genap
 
 	mov rsi, p1Name
 	mov rdx, p1NameLen
@@ -107,26 +112,6 @@ global _start
 		pop rbp
 
 		jmp %1
-%endmacro
-
-; writeP2Name
-; Menuliskan nama pemain 2 tanpa new line,
-; lalu lompat ke suatu tempat (argumen pertama macro)
-%macro writeP2Name 1
-	push rbp
-	mov rbp, rsp
-
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, p2Name
-	mov rdx, p2NameLen
-	syscall
-	call printNewLine
-
-	mov rsp, rbp
-	pop rbp
-
-	jmp %1
 %endmacro
 
 _start:
@@ -158,13 +143,6 @@ game:
 
 		mov rax, 1
 		mov rdi, 1
-		mov rsi, batas
-		mov rdx, batasLen
-		syscall
-		call printNewLine
-
-		mov rax, 1
-		mov rdi, 1
 		mov rsi, newRoundMsg
 		mov rdx, newRoundMsgLen
 		syscall
@@ -183,7 +161,7 @@ game:
 
 		.playerTurn1:
 			mov r8b, bl
-			and r8, 0x1
+			and r8, 1
 			mov rax, 1
 			mov rdi, 1
 			mov rsi, playerTurn1
@@ -215,13 +193,16 @@ game:
 			cmp r9, 6
 			jg .badInput
 
+			mov r8b, bl
+			and r8, 1
+
 			; too lazy for switch-case statement
 			cmp r9, 1
 			je .weak
 			cmp r9, 2
-			je .heal
-			cmp r9, 3
 			je .strong
+			cmp r9, 3
+			je .heal
 			cmp r9, 4
 			je .stats
 			cmp r9, 5
@@ -242,21 +223,24 @@ game:
 		call exit
 
 	.help:
+		call printBatas
 		mov rax, 1
 		mov rdi, 1
 		mov rsi, helpMsg
 		mov rdx, helpMsgLen
 		syscall
+		call printBatas
 		jmp .playerInput
 
 	.stats:
+		call printBatas
 		; Witch's hp
 		mov rax, 1
 		mov rdi, 1
 		mov rsi, witchStatsMsg1
 		mov rdx, witchStatsMsg1Len
 		syscall
-		mov rdi, r12
+		mov rdi, r13
 		call printNum
 		call printNewLine
 
@@ -266,7 +250,7 @@ game:
 		mov rsi, witchStatsMsg2
 		mov rdx, witchStatsMsg2Len
 		syscall
-		mov rdi, r13
+		mov rdi, r12
 		call printNum
 		call printNewLine
 
@@ -276,7 +260,7 @@ game:
 		mov rsi, dragonStatsMsg1
 		mov rdx, dragonStatsMsg1Len
 		syscall
-		mov rdi, r14
+		mov rdi, r15
 		call printNum
 		call printNewLine
 
@@ -286,35 +270,73 @@ game:
 		mov rsi, dragonStatsMsg2
 		mov rdx, dragonStatsMsg2Len
 		syscall
-		mov rdi, r15
+		mov rdi, r14
 		call printNum
 		call printNewLine
+
+		call printBatas
 
 		jmp .playerInput
 
 	.strong:
+		call printBatas
 		mov rax, 1
 		mov rdi, 1
 		mov rsi, strongAtkMsg
 		mov rdx, strongAtkMsgLen
 		syscall
+		call printBatas
+
+		test r8, r8
+		jz .strongP2
+		sub r12, 3 ; p1Stamina -= 3
+		sub r15, 5 ; p2Hp -= 5
 		jmp .endTurn
 
+		.strongP2:
+			sub r14, 3 ; p2Stamina -= 3
+			sub r13, 5 ; p1Hp -= 5
+			jmp .endTurn
+
 	.heal:
+		call printBatas
 		mov rax, 1
 		mov rdi, 1
 		mov rsi, healMsg
 		mov rdx, healMsgLen
 		syscall
+		call printBatas
+
+		test r8, r8
+		jz .healP2
+		sub r12, 2
+		add r13, 2
 		jmp .endTurn
 
+		.healP2:
+			sub r14, 2
+			add r15, 2
+			jmp .endTurn
+
 	.weak:
+		call printBatas
 		mov rax, 1
 		mov rdi, 1
 		mov rsi, weakAtkMsg
 		mov rdx, weakAtkMsgLen
 		syscall
+		call printBatas
+
+		test r8, r8
+		jz .weakP2
+		sub r12, 1
+		sub r15, 2
 		jmp .endTurn
+
+		.weakP2:
+			sub r14, 1
+			sub r13, 2
+			jmp .endTurn
 
 	.badInput:
 		mov rax, 1
@@ -325,8 +347,17 @@ game:
 		jmp .playerInput
 
 	.restoreStamina:
-		add r13, 2
-		add r15, 2
+		add r12, 2
+		add r14, 2
+
+		call printBatas
+		mov rax, 1
+		mov rdi, 1
+		mov rsi, restoreStaminaMsg
+		mov rdx, restoreStaminaMsgLen
+		syscall
+		call printBatas
+
 		jmp .playerTurn1
 
 ; *** Utility functions ***
@@ -451,6 +482,22 @@ getNumInput:
 
 		cmp rdx, rcx ; kondisi, banyak yang "dibaca" == banyak digit
 		jne .loop ; if (i != rcx) goto loop;
+
+	mov rsp, rbp
+	pop rbp
+	ret
+
+
+printBatas:
+	push rbp
+	mov rbp, rsp
+
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, batas
+	mov rdx, batasLen
+	syscall
+	call printNewLine
 
 	mov rsp, rbp
 	pop rbp
