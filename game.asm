@@ -9,6 +9,9 @@ batasLen: equ $-batas
 gameTitle: db "[---- Witches 'n Dragons ----]"
 gameTitleLen: equ $-gameTitle
 
+gameOver: db "[---- The End ----]"
+gameOverLen: equ $-gameOver
+
 p1Name: db "Witch"
 p1NameLen: equ $-p1Name
 p2Name: db "Dragon"
@@ -46,11 +49,22 @@ witchStatsMsg1Len: equ $-witchStatsMsg1
 witchStatsMsg2: db "Stamina:"
 witchStatsMsg2Len: equ $-witchStatsMsg2
 
-dragonStatsMsg1: db "The Dragon's stats:", 10\
-			"HP:"
+dragonStatsMsg1: db "The Dragon's stats:", 10, "HP: "
 dragonStatsMsg1Len: equ $-dragonStatsMsg1
-dragonStatsMsg2: db "Stamina:"
+dragonStatsMsg2: db "Stamina: "
 dragonStatsMsg2Len: equ $-dragonStatsMsg2
+
+witchWinMsg: db "The Witches are triumphant over the Dragons!", 10
+witchWinMsgLen: equ $-witchWinMsg
+dragonWinMsg: db "The Dragons are triumphant over the Witches!", 10
+dragonWinMsgLen: equ $-dragonWinMsg
+
+strongAtkMsg: db "You dealt 5 damage to your opponent.", 10
+strongAtkMsgLen: equ $-strongAtkMsg
+weakAtkMsg: db "You dealt 2 damage to your opponent.", 10
+weakAtkMsgLen: equ $-weakAtkMsg
+healMsg: db "You restored 2 HP.", 10
+healMsgLen: equ $-healMsg
 
 dbgMsg1: db "Halo", 10
 dbgMsg1Len: equ $-dbgMsg1
@@ -88,7 +102,7 @@ global _start
 		mov rdx, p2NameLen
 		syscall
 
-	.done
+	.done:
 		mov rsp, rbp
 		pop rbp
 
@@ -159,6 +173,8 @@ game:
 		call printNum
 		call printNewLine
 
+		xor rdx, rdx
+		mov rax, rbx
 		mov r8, 3
 		div r8
 
@@ -279,24 +295,24 @@ game:
 	.strong:
 		mov rax, 1
 		mov rdi, 1
-		mov rsi, helpMsg
-		mov rdx, helpMsgLen
+		mov rsi, strongAtkMsg
+		mov rdx, strongAtkMsgLen
 		syscall
 		jmp .endTurn
 
 	.heal:
 		mov rax, 1
 		mov rdi, 1
-		mov rsi, helpMsg
-		mov rdx, helpMsgLen
+		mov rsi, healMsg
+		mov rdx, healMsgLen
 		syscall
 		jmp .endTurn
 
 	.weak:
 		mov rax, 1
 		mov rdi, 1
-		mov rsi, helpMsg
-		mov rdx, helpMsgLen
+		mov rsi, weakAtkMsg
+		mov rdx, weakAtkMsgLen
 		syscall
 		jmp .endTurn
 
@@ -309,9 +325,9 @@ game:
 		jmp .playerInput
 
 	.restoreStamina:
-		add r12, 2
-		add r14, 2
-
+		add r13, 2
+		add r15, 2
+		jmp .playerTurn1
 
 ; *** Utility functions ***
 ; void exit(int code);
