@@ -1,5 +1,22 @@
 # Game RPG turn-based sederhana
 > [Game Inspiration](https://www.youtube.com/watch?v=6izF5Wyr94o&t=44s)
+
+## Pre-requisite
+1. `nasm`
+2. `ld`
+3. GNU make (`make`)
+
+## Build
+1. `make` or `make build`
+### For debugging
+1. `DEBUG=1 make`
+
+## Running
+1. Build
+2. `./bin/game`
+
+### Alternative
+1. `make run`
 ## Aturan Permainan
 ### Pemain
 Seoranng pemain memiliki seorang karakter
@@ -21,7 +38,7 @@ Setiap karakter memiliki 100 stamina dan 100 HP di awal
 - Permainan berakhir ketika kedua karakter sudah tidak ada stamina
 - Permainan berakhir ketika salah seorang karakter kehabisan HP
 
-## ASM notes
+## CReferences
 Program "hello world"
 ```as
 section .data
@@ -47,3 +64,6 @@ syscall
 
 ### Register Notes
 https://stackoverflow.com/questions/18024672/what-registers-are-preserved-through-a-linux-x86-64-function-call
+
+### Contoh jadi
+https://github.com/fraglantia/asm-numberguesser
